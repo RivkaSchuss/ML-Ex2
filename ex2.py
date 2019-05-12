@@ -7,7 +7,7 @@ import numpy as np
 def load_file(file_name):
     data = []
     # Sex feature to numerical index dictionary
-    sex_to_index = {'M': 0, 'F': 1, 'I': 2}
+    sex_to_index = {'M': 0.1, 'F': 0.5, 'I': 0.8}
     # Read file
     with open(file_name, 'r') as file:
         for line in file:
@@ -32,7 +32,7 @@ def load_labels(data):
 
 
 class Perceptron:
-    def __init__(self, train_x, train_y, lr=0.01):
+    def __init__(self, train_x, train_y, lr=0.1):
         self.train_x = train_x
         self.train_y = train_y
         self.lr = lr
@@ -77,10 +77,12 @@ class PA:
 
 def run_perceptron(train_data, train_labels):
     perceptron = Perceptron(train_data, train_labels)
-    prediction = perceptron.predict(train_data)
-    accuracy = np.mean(prediction == train_labels, dtype=np.float64)
+    prediction_train = perceptron.predict(train_data)
+    error = np.mean(prediction_train != train_labels, dtype=np.float64)
 
-    return accuracy
+    #print("train accuracy: {} %".format(100 - np.mean(np.abs(prediction_train - train_labels)) * 100))
+    #print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_pred_test - Y_test)) * 100))
+    return 1 - error
 
 
 def main():
