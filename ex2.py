@@ -32,11 +32,12 @@ def load_labels(data):
 
 
 class Perceptron:
-    def __init__(self, train_x, train_y, lr=0.1):
+    def __init__(self, train_x, train_y, eta=0.25, num_of_classes=3, lr=0.1):
         self.train_x = train_x
         self.train_y = train_y
         self.lr = lr
-        # self.w = np.random.uniform(-1, 1, [np.unique(train_y).size, train_x.shape[1]])
+        self.eta = eta
+        #self.w = np.zeros((num_of_classes, len(train_x[0])))
         self.w = np.zeros((np.unique(train_y).size, train_x.shape[1]))
         self.train()
 
@@ -58,21 +59,64 @@ class Perceptron:
 
 
 class SVM:
-    def __init__(self, visualization=True):
-        self.visualization = visualization
+    def __init__(self, train_x, train_y, num_of_classes=3, lamda=0.2, lr=0.1, eta=0.25):
+        self.train_x = train_x
+        self.train_y = train_y
+        self.lr = lr
+        self.eta = eta
+        self.lamda = lamda
+        # self.w = np.random.uniform(-1, 1, [np.unique(train_y).size, train_x.shape[1]])
+        self.w = np.zeros((np.unique(train_y).size, train_x.shape[1]))
+        self.train()
 
-    def predict(self, inputs):
-        classification = np.sign(np.dot(np.array(inputs), self.w) + self.b)
+    def train(self, epochs=1000):
+        for e in range(epochs):
+            for x, y in zip(self.train_x, self.train_y):
+                # predict
+                y_hat = int(np.argmax(np.dot(self.w, x)))
+                if y != y_hat:
+                    eta_lamda = 1 - self.eta * self.lamda
+                    eta_x = self.eta * x
+                    self.w[int(y), :] *= eta_lamda
+                    self.w[int(y), :] += eta_x
+                    self.w[y_hat, :] *= eta_lamda
+                    self.w[y_hat, :] -= eta_x
+            prediction_train = self.predict(self.train_x)
+            error = np.mean(prediction_train != self.train_y, dtype=np.float64)
+            print(1 - error)
 
-        return classification
+    def predict(self, test_x):
+        predictions = np.zeros(test_x.shape[0])
+        for i, e in enumerate(test_x):
+            predictions[i] = np.argmax(np.dot(self.w, e))
+        return predictions
 
 
 class PA:
-    def __init__(self, x):
-        self.x = x
+    def __init__(self, train_x, train_y, lr=0.1):
+        self.train_x = train_x
+        self.train_y = train_y
+        self.lr = lr
+        self.w = np.zeros((np.unique(train_y).size, train_x.shape[1]))
+        self.train()
 
-    def predict(self):
-        print("run pa")
+    def train(self, epochs=1000):
+        for e in range(epochs):
+            for x, y in zip(self.train_x, self.train_y):
+                # predict
+                y_hat = int(np.argmax(np.dot(self.w, x)))
+                if y != y_hat:
+                    t = (max(0, 1 - (np.dot(self.w[int(y)], x)) + (np.dot(self.w[int(y_hat)], x)))) / (
+                            np.linalg.norm(x) ** 2)
+                    tx = t * x
+                    self.w[int(y), :] += tx
+                    self.w[y_hat, :] -= tx
+
+    def predict(self, test_x):
+        predictions = np.zeros(test_x.shape[0])
+        for i, e in enumerate(test_x):
+            predictions[i] = np.argmax(np.dot(self.w, e))
+        return predictions
 
 
 def run_perceptron(train_data, train_labels):
@@ -85,14 +129,74 @@ def run_perceptron(train_data, train_labels):
     return 1 - error
 
 
+def run_svm(train_data, train_labels):
+    svm = SVM(train_data, train_labels)
+    prediction_train = svm.predict(train_data)
+    error = np.mean(prediction_train != train_labels, dtype=np.float64)
+    return 1 - error
+
+
+def run_pa(train_data, train_labels):
+    pa = PA(train_data, train_labels)
+    prediction_train = pa.predict(train_data)
+    error = np.mean(prediction_train != train_labels, dtype=np.float64)
+    return 1 - error
+
+
+def normalize(data):
+    for i in range(len(data[0])):
+        min_arg = float(min(data[:, i]))
+        max_arg = float(max(data[:, i]))
+        if min_arg == max_arg:  # todo
+            return 1
+        for j in range(len(data)):
+            old = data[j, i]
+            data[j, i] = (float(data[j, i]) - min_arg) / (max_arg - min_arg)
+        return data
+
+
+def organize_features(data, types):
+    col = len(types) - 1
+    # adding col of zeros
+    for i in range(col):
+        data = np.c_[np.zeros(len(data)), data]
+    for i in range(len(data)):
+        for j in range(len(types)):
+            if data[i][col] == types[j]:
+                # delete the original sign
+                data[i][col] = float(0)
+                # light the true bit
+                data[i][j] = float(1)
+    return data
+
+
+def load_data(train_data, train_label, test_data):
+    train_data = np.genfromtxt(train_data, delimiter=',', dtype="|U5")
+    train_label = np.genfromtxt(train_label, delimiter=",")
+    test_data = np.genfromtxt(test_data, delimiter=",", dtype="|U5")
+    #test_label = np.genfromtxt(test_label, delimiter=',')
+
+    train_data = organize_features(train_data, ['M', 'F', 'I'])
+    test_data = organize_features(test_data, ['M', 'F', 'I'])
+
+    train_data = normalize(train_data)
+    test_data = normalize(test_data)
+
+    return train_data, train_label, test_data
+
+
 def main():
     args = sys.argv
     train_x, train_y, test_x = args[1], args[2], args[3]
+    #train_data, train_labels, test_train = load_data(train_x, train_y, test_x)
     train_data = load_file(train_x)
     train_labels = load_labels(train_y)
-    #train_x, dev_x, train_y, dev_y = train_dev_split(train_data, train_labels)
-    perceptron_predic = run_perceptron(train_data, train_labels)
-    print(perceptron_predic)
+    #perceptron_predict = run_perceptron(train_data, train_labels)
+    svm_predict = run_svm(train_data, train_labels)
+    #pa_predict = run_pa(train_data, train_labels)
+    #print(perceptron_predict)
+    #print(svm_predict)
+    #print(pa_predict)
 
 
 if __name__ == "__main__":
