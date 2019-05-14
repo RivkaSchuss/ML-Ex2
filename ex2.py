@@ -59,6 +59,7 @@ class SVM:
         self.lr = lr
         # self.eta = eta
         self.lamda = lamda
+        self.num_of_classes = num_of_classes
         self.w = np.random.uniform(-0.5, 0.5, [np.unique(train_y).size, train_x.shape[1]])
         # self.w = np.zeros((np.unique(train_y).size, train_x.shape[1]))
         self.train()
@@ -72,7 +73,7 @@ class SVM:
                 if y != y_hat:
                     self.w[int(y), :] = eta_lamda * self.w[int(y), :] + self.lr * x
                     self.w[y_hat, :] = eta_lamda * self.w[y_hat, :] - self.lr * x
-                    for i in range(3):
+                    for i in range(self.num_of_classes):
                         if i != y and i != y_hat:
                             self.w[i, :] *= eta_lamda
                     # eta_x = self.eta * x
