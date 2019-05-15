@@ -4,6 +4,13 @@ from random import shuffle, random
 import numpy as np
 from sklearn.model_selection import train_test_split
 
+perceptron_lr = 0.1
+percptron_epochs = 1000
+svm_lr = 0.001
+svm_lamda = 0.01
+svm_epochs = 100
+pa_lr = 0.1
+pa_epochs = 1000
 
 def load_file(file_name):
     data = []
@@ -26,16 +33,16 @@ def load_labels(data):
 
 
 class Perceptron:
-    def __init__(self, train_x, train_y, eta=0.25, num_of_classes=3, lr=0.1):
+    def __init__(self, train_x, train_y):
         self.train_x = train_x
         self.train_y = train_y
-        self.lr = lr
-        self.eta = eta
+        self.lr = perceptron_lr
+        # self.eta = eta
         # self.w = np.zeros((num_of_classes, len(train_x[0])))
         self.w = np.zeros((np.unique(train_y).size, train_x.shape[1]))
         self.train()
 
-    def train(self, epochs=1000):
+    def train(self, epochs=percptron_epochs):
         # self.train_x, self.train_y = np.random.shuffle(self.train_x, self.train_y, random_state=1)
         for e in range(epochs):
             for x, y in zip(self.train_x, self.train_y):
@@ -53,7 +60,7 @@ class Perceptron:
 
 
 class SVM:
-    def __init__(self, train_x, train_y, num_of_classes=3, lamda=0.01, lr=0.001, eta=0.25):
+    def __init__(self, train_x, train_y, num_of_classes=3, lamda=svm_lamda, lr=svm_lr):
         self.train_x = train_x
         self.train_y = train_y
         self.lr = lr
@@ -93,14 +100,14 @@ class SVM:
 
 
 class PA:
-    def __init__(self, train_x, train_y, lr=0.1):
+    def __init__(self, train_x, train_y, lr=pa_lr):
         self.train_x = train_x
         self.train_y = train_y
         self.lr = lr
         self.w = np.zeros((np.unique(train_y).size, train_x.shape[1]))
         self.train()
 
-    def train(self, epochs=1000):
+    def train(self, epochs=pa_epochs):
         for e in range(epochs):
             for x, y in zip(self.train_x, self.train_y):
                 # predict
