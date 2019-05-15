@@ -4,13 +4,14 @@ from random import shuffle, random
 import numpy as np
 from sklearn.model_selection import train_test_split
 
-perceptron_lr = 0.1
-percptron_epochs = 1000
-svm_lr = 0.001
+perceptron_lr = 0.0001
+percptron_epochs = 500
+svm_lr = 0.0001
 svm_lamda = 0.01
 svm_epochs = 100
-pa_lr = 0.1
+pa_lr = 0.0001
 pa_epochs = 1000
+
 
 def load_file(file_name):
     data = []
@@ -30,6 +31,11 @@ def load_file(file_name):
 def load_labels(data):
     labels = np.loadtxt(data, dtype=np.float64)
     return labels
+
+
+def random_permutation(train_x, train_y):
+    permute = np.random.permutation(train_x.shape[0])
+    return train_x[permute], train_y[permute]
 
 
 class Perceptron:
@@ -126,27 +132,27 @@ class PA:
         return predictions
 
 
-def run_perceptron(train_data, train_labels):
+def run_perceptron(train_data, train_labels, test_data, test_labels):
     perceptron = Perceptron(train_data, train_labels)
-    prediction_train = perceptron.predict(train_data)
-    error = np.mean(prediction_train != train_labels, dtype=np.float64)
+    prediction_train = perceptron.predict(test_data)
+    error = np.mean(prediction_train != test_labels, dtype=np.float64)
 
     # print("train accuracy: {} %".format(100 - np.mean(np.abs(prediction_train - train_labels)) * 100))
     # print("test accuracy: {} %".format(100 - np.mean(np.abs(Y_pred_test - Y_test)) * 100))
     return 1 - error, prediction_train
 
 
-def run_svm(train_data, train_labels):
+def run_svm(train_data, train_labels, test_data, test_labels):
     svm = SVM(train_data, train_labels)
-    prediction_train = svm.predict(train_data)
-    error = np.mean(prediction_train != train_labels, dtype=np.float64)
+    prediction_train = svm.predict(test_data)
+    error = np.mean(prediction_train != test_labels, dtype=np.float64)
     return 1 - error, prediction_train
 
 
-def run_pa(train_data, train_labels):
+def run_pa(train_data, train_labels, test_data, test_labels):
     pa = PA(train_data, train_labels)
-    prediction_train = pa.predict(train_data)
-    error = np.mean(prediction_train != train_labels, dtype=np.float64)
+    prediction_train = pa.predict(test_data)
+    error = np.mean(prediction_train != test_labels, dtype=np.float64)
     return 1 - error, prediction_train
 
 
@@ -200,25 +206,28 @@ def load_data(train_data, train_label, test_data):
 def data_print(perceptron_pred, svm_pred, pa_pred):
     for i in range(svm_pred.shape[0]):
         print('perceptron: {}, svm: {}, pa: {}'.format(str(int(perceptron_pred[i])), str(int(svm_pred[i])),
-              str(int(pa_pred[i]))))
+                                                       str(int(pa_pred[i]))))
 
 
 def main():
     args = sys.argv
-    train_x, train_y, test_x = args[1], args[2], args[3]
+    train_x, train_y, test_x, test_y = args[1], args[2], args[3], args[4]
     # train_data, train_labels, test_train = load_data(train_x, train_y, test_x)
     train_data = load_file(train_x)
     train_labels = load_labels(train_y)
+    train_data, train_labels = random_permutation(train_data, train_labels)
+    test_data = load_file(test_x)
+    test_labels = load_labels(test_y)
 
-    perceptron_precision, perceptron_predict = run_perceptron(train_data, train_labels)
-    svm_precision, svm_predict = run_svm(train_data, train_labels)
-    pa_precision, pa_predict = run_pa(train_data, train_labels)
+    perceptron_precision, perceptron_predict = run_perceptron(train_data, train_labels, test_data, test_labels)
+    svm_precision, svm_predict = run_svm(train_data, train_labels, test_data, test_labels)
+    pa_precision, pa_predict = run_pa(train_data, train_labels, test_data, test_labels)
 
     print(perceptron_precision)
     print(svm_precision)
     print(pa_precision)
 
-    data_print(perceptron_predict, svm_predict, pa_predict)
+    # data_print(perceptron_predict, svm_predict, pa_predict)
 
 
 if __name__ == "__main__":
